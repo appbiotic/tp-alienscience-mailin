@@ -1,4 +1,5 @@
 use log::trace;
+use tokio::io::{AsyncWrite, AsyncWriteExt};
 use std::io;
 
 // Empty response that sends nothing back to the client
@@ -164,6 +165,30 @@ impl Response {
             }
             Message::Fixed(s) => write!(out, "{} {}\r\n", self.code, s)?,
             Message::Custom(s) => write!(out, "{} {}\r\n", self.code, s)?,
+            Message::Empty => (),
+        };
+        Ok(())
+    }
+
+    /// Write the response to the given writer
+    pub async fn async_write_to<T>(&self, out: &mut T) -> io::Result<()> where T: AsyncWrite + Unpin {
+        match &self.message {
+            Message::Dynamic(ref head, ref tail) => {
+                if tail.is_empty() {
+                    out.write_all(format!("{} {}\r\n", self.code, head).as_bytes()).await?;
+                } else {
+                    out.write_all(format!("{}-{}\r\n", self.code, head).as_bytes()).await?;
+                    for i in 0..tail.len() {
+                        if tail.len() > 1 && i < tail.len() - 1 {
+                            out.write_all(format!("{}-{}\r\n", self.code,  tail[i]).as_bytes()).await?;                            
+                        } else {
+                            out.write_all(format!("{} {}\r\n", self.code,  tail[i]).as_bytes()).await?;
+                        }
+                    }
+                }
+            }
+            Message::Fixed(s) => out.write_all(format!("{} {}\r\n", self.code, s).as_bytes()).await?,
+            Message::Custom(s) => out.write_all(format!("{} {}\r\n", self.code, s).as_bytes()).await?,
             Message::Empty => (),
         };
         Ok(())

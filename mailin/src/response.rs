@@ -1,4 +1,4 @@
-use log::trace;
+use tracing::trace;
 use tokio::io::{AsyncWrite, AsyncWriteExt};
 use std::io;
 

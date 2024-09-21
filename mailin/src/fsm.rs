@@ -4,7 +4,7 @@ use crate::response::*;
 use crate::smtp::Cmd;
 use crate::{AuthMechanism, Handler, Response};
 use either::*;
-use log::{error, trace};
+use tracing::{error, trace};
 use std::borrow::BorrowMut;
 use std::net::IpAddr;
 use ternop::ternary;
